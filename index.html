@@ -710,7 +710,7 @@ let sessCorrect=0, sessWrong=0, sessStreak=0;
 // ── AI Worker URL ──────────────────────────────────────
 // Replace this with your Cloudflare Worker URL after deploying it
 // e.g. 'https://kana-recognize.yourname.workers.dev'
-const WORKER_URL = 'https://kanalearn101.ckyy0625.workers.dev';
+const WORKER_URL = 'https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
 // ──────────────────────────────────────────────────────
 
 // ══ NAVIGATION ════════════════════════════════
@@ -870,7 +870,16 @@ async function recognizeDrawing(){
   const hasDrawing=Array.from(imgData).some((v,i)=>i%4!==3&&v<240);
   if(!hasDrawing){showToast('Canvas is empty — draw something first');return;}
 
-  const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+  // Resize canvas to max 400x400 before encoding to keep payload small on mobile
+  let b64;
+  if(canvas.width>400||canvas.height>400){
+    const tmpC=document.createElement('canvas');
+    tmpC.width=tmpC.height=400;
+    tmpC.getContext('2d').drawImage(canvas,0,0,400,400);
+    b64=tmpC.toDataURL('image/jpeg',0.7).split(',')[1];
+  } else {
+    b64=canvas.toDataURL('image/jpeg',0.7).split(',')[1];
+  }
   document.getElementById('result-empty').style.display='none';
   document.getElementById('result-content').style.display='none';
   document.getElementById('result-loading').style.display='block';
