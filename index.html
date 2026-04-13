@@ -913,11 +913,19 @@ async function recognizeDrawing(){
     // Determine correct / wrong / unclear
     const detected   = result.detected||'';
     const confidence = parseInt(result.confidence)||0;
-    // Treat low-confidence detections as unclear — AI is guessing
-    const isUnclear = detected==='unclear' || detected==='' || confidence < 2;
-    // Only correct if exact character match AND AI is reasonably confident
-    const isCorrect = !isUnclear && target && detected===target && confidence >= 2;
-    const isWrong   = !isUnclear && target && !isCorrect;
+    const isUnclear  = detected==='unclear' || detected==='' || confidence < 2;
+    // In practice mode, trust the AI's explicit is_correct judgment over string matching
+    // The AI was asked directly "does this match the target?" — far more reliable
+    let isCorrect, isWrong;
+    if(target && result.is_correct !== undefined){
+      // AI gave us a direct answer
+      isCorrect = !isUnclear && result.is_correct === true;
+      isWrong   = !isUnclear && result.is_correct === false;
+    } else {
+      // Fallback to string match (free draw mode)
+      isCorrect = !isUnclear && target && detected===target && confidence >= 3;
+      isWrong   = !isUnclear && target && !isCorrect;
+    }
 
     // Verdict banner
     const vEl=document.getElementById('result-verdict');
