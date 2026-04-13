@@ -710,7 +710,7 @@ let sessCorrect=0, sessWrong=0, sessStreak=0;
 // ── AI Worker URL ──────────────────────────────────────
 // Replace this with your Cloudflare Worker URL after deploying it
 // e.g. 'https://kana-recognize.yourname.workers.dev'
-const WORKER_URL = 'https://kanalearn101.ckyy0625.workers.dev';
+const WORKER_URL = 'https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
 // ──────────────────────────────────────────────────────
 
 // ══ NAVIGATION ════════════════════════════════
@@ -911,10 +911,13 @@ async function recognizeDrawing(){
     document.getElementById('result-content').style.display='block';
 
     // Determine correct / wrong / unclear
-    const detected = result.detected||'';
-    const isUnclear = detected==='unclear'||detected==='';
-    const isCorrect = target && detected===target;
-    const isWrong   = target && !isUnclear && !isCorrect;
+    const detected   = result.detected||'';
+    const confidence = parseInt(result.confidence)||0;
+    // Treat low-confidence detections as unclear — AI is guessing
+    const isUnclear = detected==='unclear' || detected==='' || confidence < 2;
+    // Only correct if exact character match AND AI is reasonably confident
+    const isCorrect = !isUnclear && target && detected===target && confidence >= 2;
+    const isWrong   = !isUnclear && target && !isCorrect;
 
     // Verdict banner
     const vEl=document.getElementById('result-verdict');
@@ -1090,7 +1093,23 @@ function checkAnswer(rom,char){
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
 // ══ INIT ══════════════════════════════════════
-window.addEventListener('resize',()=>{if(document.getElementById('page-practice').classList.contains('active'))initCanvas();});
+(()=>{
+  let lastW=0, resizeTimer=null;
+  window.addEventListener('resize',()=>{
+    // Debounce — mobile address bar show/hide fires many resize events
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      const wrap=document.getElementById('canvas-wrap');
+      if(!wrap) return;
+      const newW=wrap.offsetWidth;
+      // Only reinitialize if width changed by more than 10px (ignore height-only changes from mobile address bar)
+      if(Math.abs(newW-lastW)>10 && document.getElementById('page-practice').classList.contains('active')){
+        lastW=newW;
+        initCanvas();
+      }
+    },250);
+  });
+})();
 renderGrid('hiragana','all');
 renderGrid('katakana','all');
 updateProgress();
