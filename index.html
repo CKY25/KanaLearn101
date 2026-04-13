@@ -892,7 +892,12 @@ async function recognizeDrawing(){
     const r=await fetch(WORKER_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({image:b64,guided:target||null})
+      body:JSON.stringify({
+        image: b64,
+        guided: target || null,
+        romaji: pracCurrent ? pracCurrent.rom : null,
+        script: pracCurrent ? (pracCurrent.row==='dakuten'||pracCurrent.row==='handakuten' ? pracKanaMode : pracKanaMode) : null
+      })
     });
     const d=await r.json();
     if(!r.ok){
